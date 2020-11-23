@@ -9,6 +9,9 @@ const DAVE = '5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy'
 const EVE = '5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw'
 
 const types = {
+  // required in 2.0.0
+  RefCount: 'u32',
+
   Address: 'AccountId',
   Index: 'u32',
   LookupSource: 'Address',
@@ -79,8 +82,18 @@ const types = {
     votes: 'BTreeMap<CurrencyIdOf, Ballot>',
   },
 
-  // required in 2.0.0
-  RefCount: 'u32',
+  StakingLedger2: {
+    stash: 'AccountId',
+    currency_id: 'CurrencyIdOf',
+    total: 'BalanceOf',
+    active: 'BalanceOf',
+    unlocking: 'Vec<UnlockChunk2>',
+  },
+
+  UnlockChunk2: {
+    value: 'BalanceOf',
+    block: 'BlockNumber',
+  },
 }
 
 const DEFAULT_CURRENCY = '0x0000000000000000'
@@ -121,6 +134,18 @@ async function waitFinalized(senderPair, options, tx) {
       if (status.isInBlock) {
       } else if (status.isFinalized) {
         resolve()
+      }
+    })
+  })
+}
+
+async function waitInBlock(senderPair, options, tx) {
+  return new Promise((resolve, reject) => {
+    tx.signAndSend(senderPair, options, ({ events = [], status }) => {
+      console.log('Transaction status:', status.type)
+      if (status.isInBlock) {
+        resolve()
+      } else if (status.isFinalized) {
       }
     })
   })
@@ -177,7 +202,7 @@ async function run() {
   const transfer_amount = 100000000000 * util.BN_THOUSAND
   const transfers = []
   transfers.push(
-    waitFinalized(
+    waitInBlock(
       alicePair,
       { nonce: nonces.ALICE.clone() },
       api.tx.preCurrencyMint.transfer(
@@ -191,7 +216,7 @@ async function run() {
   console.log('Transfer ALICE -> CHARLIE', transfer_amount)
 
   transfers.push(
-    waitFinalized(
+    waitInBlock(
       alicePair,
       { nonce: nonces.ALICE.clone() },
       api.tx.preCurrencyMint.transfer(DEFAULT_CURRENCY, DAVE, transfer_amount),
@@ -201,7 +226,7 @@ async function run() {
   console.log('Transfer ALICE -> DAVE', transfer_amount)
 
   transfers.push(
-    waitFinalized(
+    waitInBlock(
       alicePair,
       { nonce: nonces.ALICE.clone() },
       api.tx.preCurrencyMint.transfer(DEFAULT_CURRENCY, EVE, transfer_amount),
@@ -218,7 +243,7 @@ async function run() {
   // Promote Bob and Charlie to issuers
   const apply = []
   apply.push(
-    waitFinalized(
+    waitInBlock(
       bobPair,
       { nonce: nonces.BOB.clone() },
       api.tx.issuerCouncil.applyForSeat(
@@ -232,7 +257,7 @@ async function run() {
   console.log('BOB applied for a seat')
 
   apply.push(
-    waitFinalized(
+    waitInBlock(
       charliePair,
       { nonce: nonces.CHARLIE.clone() },
       api.tx.issuerCouncil.applyForSeat(
@@ -274,7 +299,7 @@ async function run() {
   // Bob & Charlie bond their funds
   const bond_tx = []
   bond_tx.push(
-    waitFinalized(
+    waitInBlock(
       bobPair,
       { nonce: nonces.BOB.clone() },
       api.tx.multiStake.bond(BOB, BOB_CURRENCY, util.BN_TEN * util.BN_THOUSAND),
@@ -283,7 +308,7 @@ async function run() {
   nonces.BOB.iaddn(1)
 
   bond_tx.push(
-    waitFinalized(
+    waitInBlock(
       charliePair,
       { nonce: nonces.CHARLIE.clone() },
       api.tx.multiStake.bond(
@@ -299,32 +324,43 @@ async function run() {
 
   // ###########################################################################
   // Eve applies as Issuer, Bob&Charlie vote Eve in
-  await waitFinalized(
+  await waitInBlock(
     evePair,
     { nonce: nonces.EVE.clone() },
-    api.tx.issuerCouncil.applyForSeat(EVE, util.BN_TEN * util.BN_THOUSAND, EVE_CURRENCY),
+    api.tx.issuerCouncil.applyForSeat(
+      EVE,
+      util.BN_THOUSAND * util.BN_THOUSAND,
+      EVE_CURRENCY,
+    ),
   )
   nonces.EVE.iaddn(1)
   console.log('EVE applied')
 
-  await waitFinalized(
-    bobPair,
-    { nonce: nonces.BOB.clone() },
-    api.tx.issuerCouncil.vote(EVE, true),
+  const vote_txs = []
+  vote_txs.push(
+    waitInBlock(
+      bobPair,
+      { nonce: nonces.BOB.clone() },
+      api.tx.issuerCouncil.vote(EVE, true),
+    ),
   )
   nonces.BOB.iaddn(1)
 
-  await waitFinalized(
-    charliePair,
-    { nonce: nonces.CHARLIE.clone() },
-    api.tx.issuerCouncil.vote(EVE, true),
+  vote_txs.push(
+    waitInBlock(
+      charliePair,
+      { nonce: nonces.CHARLIE.clone() },
+      api.tx.issuerCouncil.vote(EVE, true),
+    ),
   )
   nonces.CHARLIE.iaddn(1)
+  await Promise.all(vote_txs)
+
   console.log('BOB & CHARLIE voted')
 
   // ###########################################################################
   // CLEANUP
-  
+
   await api.disconnect()
 }
 
