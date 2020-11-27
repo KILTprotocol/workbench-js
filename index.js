@@ -1,6 +1,6 @@
-import { ApiPromise, WsProvider, Keyring } from '@polkadot/api'
-import util from '@polkadot/util'
-import util_crypto from '@polkadot/util-crypto'
+const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api');
+const util = require('@polkadot/util');
+const util_crypto = require('@polkadot/util-crypto');
 
 const ALICE = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
 const BOB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty'
@@ -55,7 +55,7 @@ const types = {
 
   UserVote: {
     amount: 'BalanceOf',
-    approve: 'Option<bool>',
+    approve: 'bool',
   },
 
   CouncilMember: {
@@ -65,10 +65,9 @@ const types = {
     validator_id: 'AccountId',
   },
 
-  CouncilMemberApplicant: {
-    council_member: 'CouncilMember',
-    total_issuance: 'BalanceOf',
-    closing_at_block: 'BlockNumber',
+  CouncilProposal: {
+    proposal_hash: 'Hash',
+    closing_block: 'BlockNumber',
   },
 
   Ballot: {
@@ -76,13 +75,7 @@ const types = {
     no_votes: 'BalanceOf',
   },
 
-  CouncilVote: {
-    vote: 'bool',
-    applicant: 'AccountId',
-    votes: 'BTreeMap<CurrencyIdOf, Ballot>',
-  },
-
-  StakingLedger2: {
+  StakingLedger: {
     stash: 'AccountId',
     currency_id: 'CurrencyIdOf',
     total: 'BalanceOf',
@@ -90,10 +83,24 @@ const types = {
     unlocking: 'Vec<UnlockChunk2>',
   },
 
-  UnlockChunk2: {
+  UnlockChunk: {
     value: 'BalanceOf',
     block: 'BlockNumber',
   },
+
+  AccountData: {
+    free: 'BalanceOf',
+    reserved: 'BalanceOf',
+    frozen: 'BalanceOf',
+  },
+  ProposalCall: 'Call',
+  ProposalMetadata: '()',
+  MaxProposals: 'u32',
+  Proposal: {
+    call: 'ProposalCall',
+    metadata: 'ProposalMetadata',
+  },
+  ProposalIndex: 'u32',
 }
 
 const DEFAULT_CURRENCY = '0x0000000000000000'
@@ -234,59 +241,43 @@ async function fill_council_and_vote(api) {
 
   // ###########################################################################
   // Promote Bob and Charlie to issuers
-  const apply = []
-  apply.push(
+  const admit = []
+  admit.push(
     waitInBlock(
-      bobPair,
-      { nonce: nonces.BOB.clone() },
-      api.tx.issuerCouncil.applyForSeat(
-        BOB,
-        util.BN_THOUSAND * util.BN_THOUSAND,
-        BOB_CURRENCY,
+      alicePair,
+      { nonce: nonces.ALICE.clone() },
+      api.tx.sudo.sudo(
+        api.tx.issuerCouncil.admitNewMember(
+          BOB,
+          BOB,
+          util.BN_THOUSAND * util.BN_THOUSAND,
+          BOB_CURRENCY,
+        ),
       ),
     ),
   )
-  nonces.BOB.iaddn(1)
+  nonces.ALICE.iaddn(1)
   console.log('BOB applied for a seat')
 
-  apply.push(
+  admit.push(
     waitInBlock(
-      charliePair,
-      { nonce: nonces.CHARLIE.clone() },
-      api.tx.issuerCouncil.applyForSeat(
-        CHARLIE,
-        util.BN_THOUSAND * util.BN_THOUSAND,
-        CHARLIE_CURRENCY,
+      alicePair,
+      { nonce: nonces.ALICE.clone() },
+      api.tx.sudo.sudo(
+        api.tx.issuerCouncil.admitNewMember(
+          CHARLIE,
+          CHARLIE,
+          util.BN_THOUSAND * util.BN_THOUSAND,
+          CHARLIE_CURRENCY,
+        ),
       ),
     ),
   )
-  nonces.CHARLIE.iaddn(1)
-  console.log('CHARLIE applied for a seat')
-
-  await Promise.all(apply)
-  console.log('add applications send.')
-  await log_balances(api, DEFAULT_CURRENCY)
-
-  const promote_tx = []
-  promote_tx.push(
-    waitFinalized(
-      alicePair,
-      { nonce: nonces.ALICE.clone() },
-      api.tx.sudo.sudo(api.tx.issuerCouncil.joinCouncil(BOB)),
-    ),
-  )
   nonces.ALICE.iaddn(1)
 
-  promote_tx.push(
-    waitFinalized(
-      alicePair,
-      { nonce: nonces.ALICE.clone() },
-      api.tx.sudo.sudo(api.tx.issuerCouncil.joinCouncil(CHARLIE)),
-    ),
-  )
-  nonces.ALICE.iaddn(1)
-  await Promise.all(promote_tx)
-  console.log('SUDO approved BOB & CHARLIE')
+  console.log('BOB & CHARLIE admitted as member per alices authority')
+
+  await Promise.all(admit)
 
   // ###########################################################################
   // Bob & Charlie bond their funds
@@ -324,17 +315,22 @@ async function fill_council_and_vote(api) {
       EVE,
       util.BN_THOUSAND * util.BN_THOUSAND,
       EVE_CURRENCY,
+      null,
     ),
   )
   nonces.EVE.iaddn(1)
-  console.log('EVE applied')
+
+  const proposals = await api.query.issuerCouncil.councilProposals()
+  console.log(`Current proposals: ${proposals}s`)
+  const eves_application = proposals[0]
+  console.log(`EVE applied (proposal: ${eves_application})`)
 
   const vote_txs = []
   vote_txs.push(
     waitInBlock(
       bobPair,
       { nonce: nonces.BOB.clone() },
-      api.tx.issuerCouncil.vote(EVE, true),
+      api.tx.issuerCouncil.vote(eves_application.proposal_hash, true),
     ),
   )
   nonces.BOB.iaddn(1)
@@ -343,7 +339,7 @@ async function fill_council_and_vote(api) {
     waitInBlock(
       charliePair,
       { nonce: nonces.CHARLIE.clone() },
-      api.tx.issuerCouncil.vote(EVE, true),
+      api.tx.issuerCouncil.vote(eves_application.proposal_hash, true),
     ),
   )
   nonces.CHARLIE.iaddn(1)
