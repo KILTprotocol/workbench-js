@@ -151,9 +151,7 @@ async function waitInBlock(senderPair, options, tx) {
   })
 }
 
-async function run() {
-  await util_crypto.cryptoWaitReady()
-
+async function fill_council_and_vote(api) {
   const keyring = new Keyring({
     type: 'sr25519',
   })
@@ -184,11 +182,6 @@ async function run() {
     ),
   )
 
-  const wsProvider = new WsProvider('ws://127.0.0.1:9944')
-  const api = await ApiPromise.create({
-    provider: wsProvider,
-    types,
-  })
   const nonces = {
     ALICE: (await api.rpc.system.accountNextIndex(ALICE)).toBn(),
     BOB: (await api.rpc.system.accountNextIndex(BOB)).toBn(),
@@ -357,11 +350,19 @@ async function run() {
   await Promise.all(vote_txs)
 
   console.log('BOB & CHARLIE voted')
+}
 
-  // ###########################################################################
-  // CLEANUP
+async function setup(execute) {
+  await util_crypto.cryptoWaitReady()
+  const wsProvider = new WsProvider('ws://127.0.0.1:9944')
+  const api = await ApiPromise.create({
+    provider: wsProvider,
+    types,
+  })
+
+  await execute(api)
 
   await api.disconnect()
 }
 
-run()
+setup(fill_council_and_vote)
