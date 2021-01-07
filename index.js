@@ -1,6 +1,6 @@
-const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api');
-const util = require('@polkadot/util');
-const util_crypto = require('@polkadot/util-crypto');
+const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api')
+const util = require('@polkadot/util')
+const util_crypto = require('@polkadot/util-crypto')
 
 const ALICE = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY'
 const BOB = '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty'
@@ -330,7 +330,7 @@ async function fill_council_and_vote(api) {
     waitInBlock(
       bobPair,
       { nonce: nonces.BOB.clone() },
-      api.tx.issuerCouncil.vote(eves_application.proposal_hash, true),
+      api.tx.issuerCouncil.vote(eves_application.proposal_hash, DEFAULT_CURRENCY, true),
     ),
   )
   nonces.BOB.iaddn(1)
@@ -339,7 +339,7 @@ async function fill_council_and_vote(api) {
     waitInBlock(
       charliePair,
       { nonce: nonces.CHARLIE.clone() },
-      api.tx.issuerCouncil.vote(eves_application.proposal_hash, true),
+      api.tx.issuerCouncil.vote(eves_application.proposal_hash, DEFAULT_CURRENCY, true),
     ),
   )
   nonces.CHARLIE.iaddn(1)
