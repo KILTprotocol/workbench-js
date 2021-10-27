@@ -1,6 +1,9 @@
-const { typeBundleForPolkadot } = require('@kiltprotocol/type-definitions')
-const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api')
-const { cryptoWaitReady, mnemonicGenerate } = require('@polkadot/util-crypto')
+const {
+  typeBundleForPolkadot,
+  types23,
+} = require('@kiltprotocol/type-definitions')
+const { ApiPromise, WsProvider } = require('@polkadot/api')
+const { cryptoWaitReady } = require('@polkadot/util-crypto')
 
 const CONCURRENT_REQ = 50
 
@@ -8,7 +11,10 @@ async function countAuthoredBlocks(api) {
   const head = await api.rpc.chain.getFinalizedHead()
   let header = await api.derive.chain.getHeader(head)
   const authoredBlocks = {}
-  let blockNumbers = [...Array(header.number.toNumber()).keys()]
+  let blockNumbers = [...Array(10000).keys()]
+  blockNumbers = blockNumbers
+    .map((x) => x + 70000)
+    .filter((x) => x <= header.number.toNumber())
 
   // skip genesis block #0
   blockNumbers.shift()
@@ -54,7 +60,7 @@ async function setup() {
   await cryptoWaitReady()
 
   const api = await ApiPromise.create({
-    provider: new WsProvider('wss://spiritnet.kilt.io'),
+    provider: new WsProvider('wss://spiritnet.kilt.io/'),
     typesBundle: {
       spec: {
         'mashnet-node': typeBundleForPolkadot,

@@ -96,7 +96,7 @@ async function setup() {
   await cryptoWaitReady()
 
   const api = await ApiPromise.create({
-    provider: new WsProvider('wss://westend.kilt.io'),
+    provider: new WsProvider('wss://spiritnet.kilt.io'),
     typesBundle: {
       spec: {
         'mashnet-node': typeBundleForPolkadot,
