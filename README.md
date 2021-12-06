@@ -39,6 +39,6 @@ Before executing the script, please configure the following parameters, either w
 
 ### Example usage
 ```
-KILT_ADDRESS="4tDf2xTK1opjuzSBtok6c9nvuNcugp4Qat4E1dK7gPanZWVg" START_BLOCK="0" END_BLOCK="100000" stakingRewards.js
+KILT_ADDRESS="4tDf2xTK1opjuzSBtok6c9nvuNcugp4Qat4E1dK7gPanZWVg" START_BLOCK="0" END_BLOCK="100000" node stakingRewards.js
 ```
 
