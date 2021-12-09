@@ -6,20 +6,20 @@ require('dotenv').config();
 const provider = process.env.WS_ADDRESS || new WsProvider('wss://spiritnet.kilt.io');
 
 // Configure all delegations you are interested in here
-// For each collator, you need to provide the delegations you would like to check
+// For each collator, you need to provide the collators address and the delegations you would like to check
 const DELEGATIONS = [
     {
-        collator: "4qBSZdEoUxPVnUqbX8fjXovgtQXcHK7ZvSf56527XcDZUukq",
+        collator: '4qBSZdEoUxPVnUqbX8fjXovgtQXcHK7ZvSf56527XcDZUukq',
         delegators: [
-            "4rEDw16xpfGpEohGgXLzn2Lnzq5wREGqGux9KPniVRmQYVMJ",
-            "4qN132CPMM6cTCcPVfktus8HXUptmRf3YmkFmYkuBYRjsEY8"
+            '4rEDw16xpfGpEohGgXLzn2Lnzq5wREGqGux9KPniVRmQYVMJ',
+            '4qN132CPMM6cTCcPVfktus8HXUptmRf3YmkFmYkuBYRjsEY8'
         ]
     },
     {
-        collator: "4oRRardEGiqYxzqsDyV4oJUc1GUm4qP6CnBxyAnDbo7nBrCi",
+        collator: '4oRRardEGiqYxzqsDyV4oJUc1GUm4qP6CnBxyAnDbo7nBrCi',
         delegators: [
-            "4ru2qCW5hwsKBAPSDqpzMAg1kQsg8srn8JWdyi11hUad33DH",
-            "4rLcQDzmSePUL4jCajEupocBBRqGiKJ3XLyu8v7AGChHpa9u"
+            '4ru2qCW5hwsKBAPSDqpzMAg1kQsg8srn8JWdyi11hUad33DH',
+            '4rLcQDzmSePUL4jCajEupocBBRqGiKJ3XLyu8v7AGChHpa9u'
         ]
     }
 ];
@@ -50,14 +50,15 @@ async function main() {
                     console.log(`❌ Delegation ${delegator} to collator ${collator} was pushed out`);
                     const stakeString = activeDelegators[activeDelegators.length - 1].amount.replaceAll(',', '');
                     const stake = Number.parseInt(stakeString, 10) / Math.pow(10, 15)
-                    console.log(`💰 Least delegation of this collator to compete with: ${stake} KILT`);
+                    console.log(`\t 💰 Least delegation of this collator to compete with: ${stake} KILT`);
                 } else {
-                    console.log(`\t ✅ Delegator ${delegator} still active for collator ${collator}`);
+                    console.log(`✅ Delegator ${delegator} still active for collator ${collator}`);
                 }
             }
         } else {
             console.log(`☠️ Collator ${collator} is not active anymore`);
         }
     }
+    console.log('>> done <<')
 }
 main().catch(console.error).finally(() => process.exit());
