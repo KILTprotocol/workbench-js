@@ -27,7 +27,7 @@ async function findOffline(api) {
 
 async function setup(execute) {
   await util_crypto.cryptoWaitReady()
-  const wsProvider = new WsProvider('wss://peregrine.kilt.io')
+  const wsProvider = new WsProvider('wss://peregrine.kilt.io/parachain-public-ws')
   const api = await ApiPromise.create({
     provider: wsProvider,
     types: types18,
