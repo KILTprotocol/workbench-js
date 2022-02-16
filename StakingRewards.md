@@ -31,10 +31,9 @@ Before executing the script, please configure the following parameters, either w
 1. `KILT_ADDRESS`
 2. `START_BLOCK`
 3. `END_BLOCK`
-4. Optional: `WS_ADDRESS`. Per default, we are using `wss:://spiritnet.kilt.io`.
+4. Optional: `WS_ADDRESS`. Per default, we are using `wss://spiritnet.kilt.io`.
 
 ### Example usage
 ```
 KILT_ADDRESS="4tDf2xTK1opjuzSBtok6c9nvuNcugp4Qat4E1dK7gPanZWVg" START_BLOCK="0" END_BLOCK="100000" node stakingRewards.js
 ```
-
