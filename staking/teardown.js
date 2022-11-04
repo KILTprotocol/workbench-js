@@ -2,7 +2,6 @@ const { ApiPromise, WsProvider } = require('@polkadot/api');
 const { cryptoWaitReady } = require('@polkadot/util-crypto');
 const { initAccount } = require("./utility.js")
 const { accountsToCollatorsDelegators, readKeysFromFile } = require("./io.js")
-const { batchLeaveCollatorsDelegators } = require("transactions.js");
 const { batchLeaveCollatorsDelegators } = require("./transactions.js");
 require('dotenv').config();
 
@@ -21,9 +20,10 @@ async function main() {
     await cryptoWaitReady();
 
     // Get accounts from file
-    const mnemonics = await readKeysFromFile(FILE_PATH)
+    const input = await readKeysFromFile(FILE_PATH)
 
     // Init accounts
+    const mnemonics = [...input.collators, ...input.delegators]
     const accounts = mnemonics.map(m => initAccount(m));
     const { collators, delegators } = accountsToCollatorsDelegators(accounts, NUM_COLLATORS);
 
