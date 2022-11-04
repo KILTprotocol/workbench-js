@@ -57,7 +57,7 @@ function txHandlerNormal({ resolve, reject, unsub, status, events, api, }) {
 
 module.exports = {
     initAccount,
-    initAccounts, 
+    initAccounts,
     formatBalance,
     txHandlerNormal,
 }

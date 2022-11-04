@@ -37,12 +37,12 @@ async function main() {
     const faucetAcc = initAccount(FAUCET);
     const {
         data: { free },
-      } = await api.query.system.account(faucetAcc.address)
+    } = await api.query.system.account(faucetAcc.address)
     console.log(`Balance of funding account ${faucetAcc.address}: ${free.toString()}`)
 
     // Create n Collators and n * m Delegators, so n * (1 + m) in total
-    const { accounts, mnemonics } = initAccounts(NUM_COLLATORS * (1 + maxDelegatorsPerCollator) )
-    const { collators, delegators } = accountsToCollatorsDelegators(accounts, NUM_COLLATORS);
+    const { accounts, mnemonics } = initAccounts(NUM_COLLATORS * (1 + maxDelegatorsPerCollator))
+    const { collators, delegators } = accountsToCollatorsDelegators(accounts, NUM_COLLATORS);
     console.log(`Accounts initiated: ${collators.length} Collators and ${delegators.length} Delegators`);
 
     // Fund Collators and Delegators

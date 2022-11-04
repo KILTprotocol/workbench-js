@@ -15,8 +15,8 @@ function accountsToCollatorsDelegators(accounts, numCols) {
 }
 
 // write menomics to file in order to teardown setup with same privkeys (required for Peregrine)
-async function writeKeysToFile(mnemonics, numCols){
-    const { collators, delegators } = accountsToCollatorsDelegators(mnemonics, numCols);
+async function writeKeysToFile(mnemonics, numCols) {
+    const { collators, delegators } = accountsToCollatorsDelegators(mnemonics, numCols);
     const fileName = `${new Date().getTime()}_mnemonics.txt`
     await fs.writeFile(fileName, JSON.stringify({ collators, delegators })).catch(console.error)
 }

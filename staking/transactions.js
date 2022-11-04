@@ -1,4 +1,4 @@
-const { txHandlerNormal } = require("./utility.js")
+const { txHandlerNormal } = require("./utility.js")
 
 // Fund a list of keypairs
 async function fundAccounts(api, faucetAcc, collators, collatorAmount, delegators, delegatorAmount) {
@@ -10,7 +10,7 @@ async function fundAccounts(api, faucetAcc, collators, collatorAmount, delegator
     await new Promise(async (resolve, reject) => {
         const unsub = await api.tx.utility.batch(txs).signAndSend(faucetAcc, ({ status, events }) => txHandlerNormal({ resolve, reject, unsub, status, events, api }));
     });
-    
+
     console.log(`\t Funded ${txs.length} many accounts`);
 }
 
