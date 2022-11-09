@@ -18,7 +18,7 @@ async function waitInBlock(senderPair, options, tx) {
       } else if (status.isFinalized) {
       }
     })
-  })
+  }).catch(e => console.error('Error during waitInBlock', e))
 }
 
 // Set up an account from its private key.
@@ -53,7 +53,7 @@ function txHandlerNormal({ resolve, reject, unsub, status, events, api }) {
             console.log(`${section}.${method}: ${docs.join(' ')}`)
           } else {
             // Other, CannotLookup, BadOrigin, no extra info
-            console.log(error.toString())
+            console.error(error.toString())
           }
           console.log(`Rejecting due to tx error`)
           reject()
@@ -80,7 +80,7 @@ async function faucetTransfer({ faucetAcc, faucetAmount, target, api }) {
       { nonce },
       ({ status, events }) =>
         txHandlerNormal({ resolve, reject, unsub, status, events, api }),
-    )
+    ).catch(e => console.error('Error during faucet Transfer: ', e))
   })
 
   const {
@@ -104,24 +104,21 @@ async function delegate({ delegator, delegationAmount, collatorAddress, api }) {
     const unsub = await tx.signAndSend(delegator, ({ status, events }) =>
       txHandlerNormal({ resolve, reject, unsub, status, events, api }),
     )
-  })
+  }).catch(e => console.error(`Error during delegation of ${delegator.address} for collator ${collatorAddress}`, e))
 
   console.log(`\t Successfully delegated`)
 }
 
 async function fillDelegator({
-  counter,
+  colIdx,
+  delIdx,
   api,
   collator,
   faucetAcc,
   minDelegatorStake,
   numMissingDelegators,
 }) {
-  console.log(
-    `\t [${counter}a/${numMissingDelegators}] Creating delegator and providing liquidity`,
-  )
-
-  let delegator = initAccount(mnemonicGenerate())
+  let delegator = initAccount(`${FAUCET}//c//${colIdx}//d//${delIdx}`)
   await faucetTransfer({
     faucetAcc,
     faucetAmount: minDelegatorStake.mul(new BN(2)),
@@ -129,9 +126,6 @@ async function fillDelegator({
     api,
   })
 
-  console.log(
-    `\t [${counter}b/${numMissingDelegators}] Delegate with ${delegator.address}`,
-  )
   await delegate({
     delegator,
     delegationAmount: minDelegatorStake,
@@ -163,7 +157,8 @@ async function fillCollator({
   for (let i = 1; i <= numMissingDelegators; i += 1) {
     fillingDelegators.push(
       fillDelegator({
-        counter: i,
+        colIdx: counter,
+        delIdx: i,
         api,
         collator,
         faucetAcc,
@@ -172,11 +167,11 @@ async function fillCollator({
       }),
     )
   }
-  await Promise.all(fillingDelegators)
+  await Promise.all(fillingDelegators).catch(e => console.error(`Error during fillingDelegators at col index ${counter} and del index ${i}`, e))
 }
 
-async function addCollator({ faucetAcc, api, minCollatorStake }) {
-  let collator = initAccount(mnemonicGenerate())
+async function addCollator({ faucetAcc, api, minCollatorStake, counter }) {
+  let collator = initAccount(`${FAUCET}//c//${counter}`)
   await faucetTransfer({
     faucetAcc,
     faucetAmount: minCollatorStake.mul(new BN(2)),
@@ -202,13 +197,14 @@ async function fillCollators({
   collatorsToAdd,
 }) {
   const jobs = []
-  console.log(`adding ${collatorsToAdd} collators.`)
+  console.log(`Adding ${collatorsToAdd} collators.`)
   while (jobs.length < collatorsToAdd) {
     jobs.push(
       addCollator({
         api,
         faucetAcc,
         minCollatorStake,
+        counter: jobs.length
       }),
     )
   }
@@ -264,11 +260,12 @@ async function main() {
 
   // Iterate all collators
   let jobs = []
+  let counter = 1
   for (c of activeCollators) {
     jobs.push(
       fillCollator({
         activeCollators,
-        counter: 0,
+        counter,
         api,
         collator: c,
         faucetAcc,
@@ -276,6 +273,7 @@ async function main() {
         minDelegatorStake,
       }),
     )
+    counter += 1
     if (jobs.length > 10) {
       await Promise.all(jobs)
       jobs = []
