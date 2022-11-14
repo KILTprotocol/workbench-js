@@ -1,10 +1,18 @@
+const { BN } = require('@polkadot/util')
+
 const { faucetTransfer, waitInBlock, } = require('./chain')
 const { fillDelegator } = require('./delegators')
 const { initAccount } = require('./utility')
 
+// Derives temp collator seed from base seed
+function deriveCollatorSeed(baseSeed, index) {
+    console.log(`Collator Seed: ${baseSeed}//c//${index}`)
+    return initAccount(`${baseSeed}//c//${index}`)
+}
 
-async function addCollator({ faucetAcc, api, minCollatorStake, counter, NONCE_TRACKER }) {
-    let collator = initAccount(`${FAUCET}//c//${counter}`)
+// Adds collator to network
+async function addCollator({ faucetAcc, api, minCollatorStake, baseSeed, counter, NONCE_TRACKER }) {
+    let collator = deriveCollatorSeed(baseSeed, counter)
     await faucetTransfer({
         faucetAcc,
         faucetAmount: minCollatorStake.mul(new BN(2)),
@@ -13,10 +21,11 @@ async function addCollator({ faucetAcc, api, minCollatorStake, counter, NONCE_TR
         NONCE_TRACKER,
     })
 
-    const sessionKey = await api.rpc.author.rotateKeys()
-    console.log(`add session key ${sessionKey}`)
+    // TODO: Re-enable
+    // const sessionKey = await api.rpc.author.rotateKeys()
+    // console.log(`add session key ${sessionKey}`)
 
-    await waitInBlock(collator, {}, api.tx.session.setKeys(sessionKey, '0x00'))
+    // await waitInBlock(collator, {}, api.tx.session.setKeys(sessionKey, '0x00'))
     await waitInBlock(
         collator,
         {},
@@ -24,7 +33,7 @@ async function addCollator({ faucetAcc, api, minCollatorStake, counter, NONCE_TR
     )
 }
 
-
+// Fills collator with delegators
 async function fillCollator({
     activeCollators,
     counter,
@@ -62,11 +71,13 @@ async function fillCollator({
     await Promise.all(fillingDelegators).catch(e => console.error(`Error during fillingDelegators at col index ${counter} and del index ${i}`, e))
 }
 
+// Loops over fillCollator
 async function fillCollators({
     api,
     faucetAcc,
     minCollatorStake,
     collatorsToAdd,
+    baseSeed,
     NONCE_TRACKER,
 }) {
     const jobs = []
@@ -78,6 +89,7 @@ async function fillCollators({
                 faucetAcc,
                 minCollatorStake,
                 counter: jobs.length,
+                baseSeed,
                 NONCE_TRACKER,
             }),
         )
@@ -86,8 +98,36 @@ async function fillCollators({
     await Promise.all(jobs)
 }
 
+// Removes collators via sudo
+async function removeCollators({
+    api,
+    collators,
+    sudoAcc,
+    NONCE_TRACKER,
+}) {
+    let jobs = []
+    let counter = 1;
+    for (c of collators) {
+        console.log(`[${counter}/${collators.length}] Removing candidate ${c}`)
+
+        jobs.push(waitInBlock(sudoAcc, { nonce: NONCE_TRACKER[sudoAcc.address] }, api.tx.sudo.sudo(api.tx.parachainStaking.forceRemoveCandidate(c))))
+        NONCE_TRACKER[sudoAcc.address] += 1
+
+        if (jobs.length > 10) {
+            await Promise.all(jobs)
+            jobs = []
+        }
+        counter += 1
+    }
+    await Promise.all(jobs)
+
+    console.log(`Forcedly removed exit for ${collators.length} collators.`)
+}
+
 module.exports = {
     addCollator,
     fillCollator,
     fillCollators,
+    removeCollators,
+    deriveCollatorSeed,
 }

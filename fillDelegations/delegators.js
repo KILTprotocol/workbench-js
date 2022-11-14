@@ -1,17 +1,25 @@
+const { BN } = require('@polkadot/util')
 
 const { faucetTransfer, txHandler } = require('./chain')
 const { initAccount } = require('./utility')
 
+// Derives temp delegator seed from base seed, collator and delegator indices
+function deriveDelegatorSeed(baseSeed, colIdx, delIdx) {
+    return initAccount(`${baseSeed}//c//${colIdx}//d//${delIdx}`)
+}
+
+// Adds funding and delegation
 async function fillDelegator({
     colIdx,
     delIdx,
     api,
     collator,
+    baseSeed,
     faucetAcc,
     minDelegatorStake,
     NONCE_TRACKER
 }) {
-    let delegator = initAccount(`${FAUCET}//c//${colIdx}//d//${delIdx}`)
+    let delegator = deriveDelegatorSeed(baseSeed, colIdx, delIdx)
     await faucetTransfer({
         faucetAcc,
         faucetAmount: minDelegatorStake.mul(new BN(2)),
@@ -28,6 +36,7 @@ async function fillDelegator({
     })
 }
 
+// Delegation extrinsic
 async function delegate({ delegator, delegationAmount, collatorAddress, api }) {
     const tx = api.tx.parachainStaking.joinDelegators(
         collatorAddress,

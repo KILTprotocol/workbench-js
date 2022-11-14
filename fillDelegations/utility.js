@@ -8,6 +8,7 @@ function formatBalance(amount) {
 // Set up an account from its private key.
 function initAccount(privKey) {
     const keyring = new Keyring({ type: 'sr25519' })
+    keyring.setSS58Format(38);
     return keyring.addFromUri(privKey)
 }
 

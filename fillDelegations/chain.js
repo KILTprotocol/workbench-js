@@ -1,4 +1,6 @@
 
+const { formatBalance } = require('./utility')
+
 // Faucet balance to target
 async function faucetTransfer({ faucetAcc, faucetAmount, target, api, NONCE_TRACKER }) {
     const tx = api.tx.balances.transfer(target, faucetAmount.toString())
@@ -61,6 +63,7 @@ function txHandler({ resolve, reject, unsub, status, events, api }) {
     }
 }
 
+// Executes tx with options for senderPair and waits until it is in block
 async function waitInBlock(senderPair, options, tx) {
     return new Promise((resolve, reject) => {
         tx.signAndSend(senderPair, options, ({ events = [], status }) => {
