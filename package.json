@@ -4,15 +4,15 @@
   "main": "index.js",
   "license": "MIT",
   "devDependencies": {
-    "eslint": "^7.17.0"
+    "eslint": "^8.27.0"
   },
   "dependencies": {
-    "@kiltprotocol/type-definitions": "0.1.23",
-    "@polkadot/api": "^6.10.3",
-    "@polkadot/keyring": "^8.0.5",
-    "@polkadot/types": "^6.10.3",
-    "@polkadot/util": "^8.0.5",
-    "@polkadot/util-crypto": "^8.0.5",
-    "dotenv": "^10.0.0"
+    "@kiltprotocol/type-definitions": "0.29.0",
+    "@polkadot/api": "^9.8.2",
+    "@polkadot/keyring": "^10.1.12",
+    "@polkadot/types": "^9.8.2",
+    "@polkadot/util": "^10.1.12",
+    "@polkadot/util-crypto": "^10.1.12",
+    "dotenv": "^16.0.3"
   }
 }
