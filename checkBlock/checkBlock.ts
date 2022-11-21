@@ -1,67 +1,109 @@
-import { typesBundle } from './typeBundle'
-
 import { ApiPromise, WsProvider } from '@polkadot/api'
 import { cryptoWaitReady } from '@polkadot/util-crypto'
+import { typesBundle } from '@kiltprotocol/type-definitions'
 
-async function checkBlock(api: ApiPromise, blocknumber: number) {
-  console.group()
+const BATCH_SIZE = 80
+
+async function checkBlock(
+  api: ApiPromise,
+  blocknumber: number,
+): Promise<boolean> {
   const hash = await api.rpc.chain.getBlockHash(blocknumber)
   const apiAt = await api.at(hash)
 
-  console.log(
-    `🎁 Checking block ${blocknumber} ${(
-      await apiAt.query.system.lastRuntimeUpgrade()
-    ).toString()}`,
-  )
+  let runtimeVersion = (
+    await apiAt.query.system.lastRuntimeUpgrade()
+  ).toString()
 
-  console.log('block hash:', hash.toHex())
-
+  let header = '❌'
   try {
     await api.rpc.chain.getHeader(hash)
-    console.log('✅ Header ok')
-  } catch (e) {
-    console.log('❌ Header not ok')
-    console.log(e)
-  }
+    header = '✅'
+  } catch (e) {}
 
+  let block = '❌'
   try {
     await api.rpc.chain.getBlock(hash)
-    console.log('✅ Block ok')
-  } catch (e) {
-    console.log('❌ Block not ok')
-    console.log(e)
-  }
+    block = '✅'
+  } catch (e) {}
 
+  let events = '❌'
   try {
     await apiAt.query.system.events()
-    console.log('✅ Events ok')
-  } catch (e) {
-    console.log('❌ Events not ok')
-    console.log(e)
-  }
-  console.groupEnd()
-  console.log('\n\n')
+    events = '✅'
+  } catch (e) {}
+  console.log(
+    `🎁 Checking block ${blocknumber} version ${runtimeVersion} Header:${header} Block:${block} Events:${events}`,
+  )
+
+  return header === '✅' && block === '✅' && events === '✅'
 }
 
-async function setup() {
+async function checkRange(
+  startingBlock: number,
+  endBlock: number,
+  batchSize: number,
+): Promise<Array<number>> {
+  console.log(`Checking from ${startingBlock} to ${endBlock}`)
+  const promised: Array<Promise<void>> = []
+  const failed: Array<number> = []
+
+  let lastCheckedBlock = startingBlock
+  for (let workerI = 0; workerI < batchSize; workerI += 1) {
+    promised.push(
+      (async () => {
+        const api = await buildApiPromise()
+
+        while (lastCheckedBlock < endBlock) {
+          const checkThis = lastCheckedBlock + 1
+          lastCheckedBlock = checkThis
+
+          if (!(await checkBlock(api, checkThis))) {
+            failed.push(checkThis)
+          }
+        }
+      })(),
+    )
+  }
+
+  console.log('started workers', promised.length)
+  try {
+    await Promise.all(promised)
+  } catch (e) {
+    console.log('💀 Error while checking blocks 💀')
+  }
+
+  return failed
+}
+
+async function buildApiPromise(): Promise<ApiPromise> {
   await cryptoWaitReady()
 
   const api = await ApiPromise.create({
-    provider: new WsProvider('wss://spiritnet.kilt.io/'),
+    provider: new WsProvider('ws://127.0.0.1:10144'),
     typesBundle,
   })
+
+  return api
+}
+
+async function setup() {
+  const api = await buildApiPromise()
 
   console.log(`Start fun with ${api.runtimeVersion.specName.toString()}`)
   console.log(`Start fun with ${api.runtimeChain.toString()}`)
 
-  await checkBlock(api, 156)
-  await checkBlock(api, 67016)
-  await checkBlock(api, 67332)
-  await checkBlock(api, 67373)
-  await checkBlock(api, 73929)
-  await checkBlock(api, 74507)
-  await checkBlock(api, 80942)
-  await checkBlock(api, 2241767)
+  const finalizedHead = await api.rpc.chain.getFinalizedHead()
+  const finalizedBlock = await api.rpc.chain.getBlock(finalizedHead)
+
+  const failed = await checkRange(
+    process.env.START_BLOCK || 21621,
+    finalizedBlock.block.header.number.toNumber(),
+    BATCH_SIZE,
+  )
+
+  console.log('FAILED BLOCKS:')
+  console.log(JSON.stringify(failed))
 
   console.log(`End fun`)
 
