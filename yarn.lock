@@ -54,12 +54,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@kiltprotocol/type-definitions@npm:^0.29.0":
-  version: 0.29.0
-  resolution: "@kiltprotocol/type-definitions@npm:0.29.0"
-  checksum: 7e5d5e41076b8e13e754741b597ef11f8c10afc382f83e9dc70d43b0488abfffe8effade58764e927e7334eb3cf2b21de03d5719c903e7a7109bff6edb27ffe5
+"@kiltprotocol/type-definitions@portal:/Users/albrecht/Projects/kilt/sdk/packages/type-definitions::locator=chain_workbench%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "@kiltprotocol/type-definitions@portal:/Users/albrecht/Projects/kilt/sdk/packages/type-definitions::locator=chain_workbench%40workspace%3A."
   languageName: node
-  linkType: hard
+  linkType: soft
 
 "@noble/hashes@npm:1.1.3":
   version: 1.1.3
@@ -776,7 +775,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "chain_workbench@workspace:."
   dependencies:
-    "@kiltprotocol/type-definitions": ^0.29.0
+    "@kiltprotocol/type-definitions": "portal:/Users/albrecht/Projects/kilt/sdk/packages/type-definitions"
     "@polkadot/api": ^9.9.1
     "@polkadot/util-crypto": ^10.1.13
     "@types/node": ^18.11.9

@@ -3,7 +3,8 @@
   "private": true,
   "packageManager": "yarn@3.3.0",
   "scripts": {
-    "checkBlocks": "ts-node checkBlock/checkBlock.ts"
+    "checkAllBlocks": "ts-node checkBlock/checkAllBlock.ts",
+    "checkBlock": "ts-node checkBlock/checkSelectedBlock.ts"
   },
   "dependencies": {
     "@kiltprotocol/type-definitions": "^0.29.0",
