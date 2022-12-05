@@ -51,8 +51,8 @@ async function setup() {
   const finalizedBlock = await api.rpc.chain.getBlock(finalizedHead)
 
   const failed = await checkRange(
-    process.env.START_BLOCK || 21621,
-    finalizedBlock.block.header.number.toNumber(),
+    Number(process.env.START_BLOCK) || 0,
+    Number(process.env.END_BLOCK) || finalizedBlock.block.header.number.toNumber(),
     BATCH_SIZE,
   )
 

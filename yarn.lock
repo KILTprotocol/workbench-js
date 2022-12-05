@@ -54,9 +54,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@kiltprotocol/type-definitions@portal:/Users/albrecht/Projects/kilt/sdk/packages/type-definitions::locator=chain_workbench%40workspace%3A.":
+"@kiltprotocol/type-definitions@portal:/home/weich/kilt/sdk-js/packages/type-definitions::locator=chain_workbench%40workspace%3A.":
   version: 0.0.0-use.local
-  resolution: "@kiltprotocol/type-definitions@portal:/Users/albrecht/Projects/kilt/sdk/packages/type-definitions::locator=chain_workbench%40workspace%3A."
+  resolution: "@kiltprotocol/type-definitions@portal:/home/weich/kilt/sdk-js/packages/type-definitions::locator=chain_workbench%40workspace%3A."
   languageName: node
   linkType: soft
 
